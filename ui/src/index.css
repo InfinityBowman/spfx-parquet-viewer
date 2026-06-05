@@ -1,0 +1,7 @@
+/*
+ * Tailwind v4 WITHOUT preflight: the bundle gets injected into a live
+ * SharePoint page, so global element resets would break the host page styles.
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);

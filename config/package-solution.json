@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "spfx-parquet-viewer-client-side-solution",
+    "id": "abe7a0cd-429d-48fe-9a2b-b8e5676eb27a",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.23.1"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "spfx-parquet-viewer description"
+      },
+      "longDescription": {
+        "default": "spfx-parquet-viewer description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "spfx-parquet-viewer Feature",
+        "description": "The feature that activates elements of the spfx-parquet-viewer solution.",
+        "id": "f41f851f-355c-4fd0-8dc9-42755c643d91",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/spfx-parquet-viewer.sppkg"
+  }
+}

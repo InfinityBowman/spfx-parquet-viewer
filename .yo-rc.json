@@ -1,0 +1,22 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "whichFolder": "subdir",
+    "solutionName": "spfx-parquet-viewer",
+    "environment": "spo",
+    "useGulp": false,
+    "componentType": "webpart",
+    "template": "none",
+    "componentName": "ParquetViewer",
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "22.22.3",
+    "sdksVersions": {},
+    "version": "1.23.1",
+    "libraryName": "spfx-parquet-viewer",
+    "libraryId": "abe7a0cd-429d-48fe-9a2b-b8e5676eb27a",
+    "packageManager": "npm",
+    "solutionShortDescription": "spfx-parquet-viewer description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false
+  }
+}

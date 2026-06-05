@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "parquet-viewer-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/parquetViewer/ParquetViewerWebPart.js",
+          "manifest": "./src/webparts/parquetViewer/ParquetViewerWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "ParquetViewerWebPartStrings": "lib/webparts/parquetViewer/loc/{locale}.js"
+  }
+}
