@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { parquetReadObjects } from 'hyparquet';
+import { parquetReadObjects, asyncBufferFromUrl, cachedAsyncBuffer } from 'hyparquet';
 import { compressors } from 'hyparquet-compressors';
 import type { ParquetViewerProps } from './mount';
 
@@ -55,8 +55,16 @@ export function App({ filePath, fetchFile }: ParquetViewerProps) {
       setError('Set a parquet file path in the web part properties.');
       return;
     }
-    fetchFile(filePath)
-      .then((file) => parquetReadObjects({ file, compressors, rowEnd: ROW_LIMIT }))
+    // asyncBufferFromUrl issues a HEAD for the file size, then Range GETs for the
+    // footer + only the row groups parquetReadObjects asks for. cachedAsyncBuffer
+    // dedupes overlapping reads (e.g. footer/metadata). If the endpoint ignores
+    // Range and returns the whole file (200), hyparquet transparently falls back.
+    (async () => {
+      const file = cachedAsyncBuffer(
+        await asyncBufferFromUrl({ url: filePath, fetch: fetchFile })
+      );
+      return parquetReadObjects({ file, compressors, rowEnd: ROW_LIMIT });
+    })()
       .then((result) => {
         if (!cancelled) setRows(result as Row[]);
       })

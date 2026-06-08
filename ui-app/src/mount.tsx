@@ -8,10 +8,13 @@ export interface ParquetViewerProps {
   /** Server-relative path to the .parquet file, e.g. "/sites/dev/Shared Documents/data.parquet". */
   filePath: string;
   /**
-   * Fetches the raw bytes of a file. The SPFx shell implements this with
-   * SPHttpClient (authenticated); the Vite dev harness implements it with fetch().
+   * Authenticated, range-capable fetch primitive. hyparquet (inside this bundle)
+   * calls it with `Range` headers to pull only the byte ranges it needs — the
+   * footer plus the row groups for the requested rows — instead of the whole file.
+   * The SPFx shell backs this with SPHttpClient and resolves the server-relative
+   * path to an absolute URL; the Vite dev harness backs it with window.fetch.
    */
-  fetchFile: (path: string) => Promise<ArrayBuffer>;
+  fetchFile: typeof globalThis.fetch;
 }
 
 // SPFx calls render() repeatedly on the same element (property-pane edits,

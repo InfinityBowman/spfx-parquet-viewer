@@ -4,8 +4,12 @@
 export interface ParquetViewerProps {
   /** Server-relative path to the .parquet file. */
   filePath: string;
-  /** Fetches the raw bytes of a file (SPFx: authenticated SPHttpClient; dev: fetch). */
-  fetchFile: (path: string) => Promise<ArrayBuffer>;
+  /**
+   * Authenticated, range-capable fetch primitive. The bundle's hyparquet calls
+   * it with `Range` headers to pull only the bytes it needs (SPFx: SPHttpClient;
+   * dev: window.fetch).
+   */
+  fetchFile: typeof globalThis.fetch;
 }
 
 export declare function mount(el: HTMLElement, props: ParquetViewerProps): void;
