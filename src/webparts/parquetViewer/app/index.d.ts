@@ -5,16 +5,28 @@
  * not committed; this file is.
  */
 
+/**
+ * File-like handle for ranged (partial) reads. Structurally compatible with
+ * hyparquet's AsyncBuffer.
+ */
+export interface AsyncBuffer {
+  /** Total size of the file in bytes. */
+  byteLength: number;
+  /** Reads the half-open byte range [start, end); `end` defaults to byteLength. */
+  slice(start: number, end?: number): ArrayBuffer | Promise<ArrayBuffer>;
+}
+
 export interface ParquetAppProps {
   /** Server-relative path to the .parquet file, e.g. "/sites/dev/Shared Documents/data.parquet" */
   filePath: string;
-  /** Fetches the raw bytes of a file (implemented with SPHttpClient by the shell). */
-  fetchFile: (path: string) => Promise<ArrayBuffer>;
+  /**
+   * Opens a file for ranged (partial) reading. The returned AsyncBuffer's
+   * slice() issues HTTP Range requests (implemented with SPHttpClient by the
+   * shell), so hyparquet downloads only the footer plus the column chunks it
+   * needs — not the whole file.
+   */
+  openFile: (path: string) => Promise<AsyncBuffer>;
 }
 
-export interface ParquetAppHandle {
-  update: (props: ParquetAppProps) => void;
-  unmount: () => void;
-}
-
-export function mount(el: HTMLElement, props: ParquetAppProps): ParquetAppHandle;
+export declare function mount(el: HTMLElement, props: ParquetAppProps): void;
+export declare function unmount(el: HTMLElement): void;

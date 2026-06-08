@@ -56,8 +56,17 @@ nvm use && npm run build
 ```
 Upload the `.sppkg` to your tenant App Catalog (create one under SharePoint admin center → More features → Apps), add the app to a site, then add the "ParquetViewer" web part to a page and set the parquet file path in its property pane.
 
+## Demo data
+
+```sh
+cd data && pnpm generate          # 1000 rows
+cd data && pnpm generate 50000    # row count
+cd data && pnpm generate 2gb      # size target → ~enough rows for a 2 GiB CSV (also accepts mb/kb)
+```
+Writes `data/out/demo.csv` + `data/out/demo.parquet` (snappy, via hyparquet-writer) and refreshes `ui/public/sample.parquet` for the dev harness. Both files are **streamed** (row-group-at-a-time parquet + a streamed CSV), so size is bounded by disk, not memory — a 2 GB CSV doesn't need a 2 GB string. The parquet is written in many 100k-row row groups, which is what lets ranged reads skip bytes. Deterministic (seeded), so regenerating produces identical files. Each run prints the csv→parquet compression ratio. Upload `demo.parquet` to a SharePoint doc library and point the web part at it.
+
 ## Notes
 
 - `ui/src/index.css` imports Tailwind **without preflight** — global resets would corrupt the host SharePoint page.
 - `hyparquet-compressors` covers all parquet codecs (snappy/gzip/zstd/...). If you standardize on one codec, import just that compressor to shrink the ~960KB UI bundle.
-- The viewer currently downloads the whole file and shows the first 200 rows. For large files, switch `fetchFile` to ranged reads (hyparquet accepts an `AsyncBuffer` — implement `slice()` with a `Range` header against the same `$value` endpoint).
+- The viewer uses **ranged (partial) reads** and shows the first 200 rows. The UI contract is `openFile(path): Promise<AsyncBuffer>` (see `ui/src/types.ts`): an initial 1-byte probe learns the file size, then `slice()` issues HTTP `Range` requests, so hyparquet downloads only the footer + needed column chunks instead of the whole file. The SPFx shell implements this with `SPHttpClient` against the `$value` endpoint; the Vite dev harness with `fetch()` (Vite serves `206 Partial Content`, so a big `sample.parquet` exercises the path locally — watch the Network tab).

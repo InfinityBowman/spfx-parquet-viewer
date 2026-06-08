@@ -15,7 +15,27 @@ function formatCell(value: unknown): string {
   return String(value)
 }
 
-export default function App({ filePath, fetchFile }: ParquetAppProps) {
+/** Turn an unknown thrown value into a readable message (not "[object Object]"). */
+function describeError(e: unknown): string {
+  if (e instanceof Error) return e.message
+  if (typeof e === 'string') return e
+  if (e && typeof e === 'object') {
+    const obj = e as Record<string, unknown>
+    if (typeof obj.message === 'string') return obj.message
+    const str = Object.prototype.toString.call(e) === '[object Object]' ? '' : String(e)
+    if (str) return str
+    try {
+      const json = JSON.stringify(e)
+      if (json && json !== '{}') return json
+    } catch {
+      /* fall through */
+    }
+    return `Non-Error thrown (${Object.prototype.toString.call(e)}); keys: [${Object.keys(obj).join(', ')}] — see console`
+  }
+  return String(e)
+}
+
+export default function App({ filePath, openFile }: ParquetAppProps) {
   const [rows, setRows] = useState<Row[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,18 +47,19 @@ export default function App({ filePath, fetchFile }: ParquetAppProps) {
       setError('Set a parquet file path in the web part properties.')
       return
     }
-    fetchFile(filePath)
+    openFile(filePath)
       .then((file) => parquetReadObjects({ file, compressors, rowEnd: ROW_LIMIT }))
       .then((result) => {
         if (!cancelled) setRows(result as Row[])
       })
       .catch((e: unknown) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e))
+        console.error('[ParquetViewer] failed to load', filePath, e)
+        if (!cancelled) setError(describeError(e))
       })
     return () => {
       cancelled = true
     }
-  }, [filePath, fetchFile])
+  }, [filePath, openFile])
 
   if (error) {
     return (

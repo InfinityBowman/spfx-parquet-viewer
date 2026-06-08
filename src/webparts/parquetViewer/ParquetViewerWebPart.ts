@@ -4,10 +4,10 @@ import {
   PropertyPaneTextField
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
-import { SPHttpClient } from '@microsoft/sp-http';
+import { SPHttpClient, type SPHttpClientResponse } from '@microsoft/sp-http';
 
 import * as strings from 'ParquetViewerWebPartStrings';
-import { mount, type ParquetAppHandle, type ParquetAppProps } from './app/index';
+import { mount, unmount, type AsyncBuffer } from './app/index';
 
 export interface IParquetViewerWebPartProps {
   filePath: string;
@@ -20,36 +20,52 @@ export interface IParquetViewerWebPartProps {
  */
 export default class ParquetViewerWebPart extends BaseClientSideWebPart<IParquetViewerWebPartProps> {
 
-  private _app: ParquetAppHandle | undefined;
-
   public render(): void {
-    const props: ParquetAppProps = {
+    mount(this.domElement, {
       filePath: this.properties.filePath,
-      fetchFile: this._fetchFile
-    };
-
-    if (this._app) {
-      this._app.update(props);
-    } else {
-      this._app = mount(this.domElement, props);
-    }
+      openFile: this._openFile
+    });
   }
 
   protected onDispose(): void {
-    if (this._app) {
-      this._app.unmount();
-      this._app = undefined;
-    }
-    super.onDispose();
+    unmount(this.domElement);
   }
 
-  private _fetchFile = async (path: string): Promise<ArrayBuffer> => {
+  // Opens a SharePoint file for ranged reads. The parquet $value endpoint
+  // honors HTTP Range, so hyparquet pulls only the footer + needed column
+  // chunks via slice() instead of downloading the whole file.
+  private _openFile = async (path: string): Promise<AsyncBuffer> => {
     const url: string = `${this.context.pageContext.web.absoluteUrl}/_api/web/GetFileByServerRelativePath(decodedurl='${encodeURIComponent(path)}')/$value`;
-    const response = await this.context.spHttpClient.get(url, SPHttpClient.configurations.v1);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch '${path}': HTTP ${response.status}`);
+    const getRange = (range: string): Promise<SPHttpClientResponse> =>
+      this.context.spHttpClient.get(url, SPHttpClient.configurations.v1, { headers: { Range: range } });
+
+    // One tiny ranged request to learn the total size (and confirm Range support).
+    // Use 0-1 rather than 0-0 — some static servers (e.g. Vite's sirv) treat an
+    // end of 0 as falsy and return the whole file for `bytes=0-0`.
+    const probe = await getRange('bytes=0-1');
+    if (!probe.ok && probe.status !== 206) {
+      throw new Error(`Failed to open '${path}': HTTP ${probe.status}`);
     }
-    return response.arrayBuffer();
+    const contentRange: string | null = probe.headers.get('Content-Range'); // "bytes 0-0/123456"
+    const byteLength: number = contentRange
+      ? Number(contentRange.split('/')[1])
+      : Number(probe.headers.get('Content-Length'));
+    if (!Number.isFinite(byteLength) || byteLength <= 0) {
+      throw new Error(`Could not determine size of '${path}'`);
+    }
+
+    return {
+      byteLength,
+      slice: async (start: number, end: number = byteLength): Promise<ArrayBuffer> => {
+        const from: number = start < 0 ? byteLength + start : start;
+        const to: number = (end < 0 ? byteLength + end : end) - 1; // HTTP Range end is inclusive
+        const response: SPHttpClientResponse = await getRange(`bytes=${from}-${to}`);
+        if (!response.ok && response.status !== 206) {
+          throw new Error(`Failed to read bytes ${from}-${to} of '${path}': HTTP ${response.status}`);
+        }
+        return response.arrayBuffer();
+      }
+    };
   };
 
   protected get dataVersion(): Version {

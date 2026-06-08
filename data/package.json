@@ -1,0 +1,14 @@
+{
+  "name": "spfx-parquet-viewer-data",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate.js"
+  },
+  "dependencies": {
+    "hyparquet": "^1.26.0",
+    "hyparquet-compressors": "^1.1.1",
+    "hyparquet-writer": "^0.15.6"
+  }
+}

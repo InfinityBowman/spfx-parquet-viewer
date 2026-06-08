@@ -1,0 +1,53 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      hyparquet:
+        specifier: ^1.26.0
+        version: 1.26.0
+      hyparquet-compressors:
+        specifier: ^1.1.1
+        version: 1.1.1
+      hyparquet-writer:
+        specifier: ^0.15.6
+        version: 0.15.6
+
+packages:
+
+  fzstd@0.1.1:
+    resolution: {integrity: sha512-dkuVSOKKwh3eas5VkJy1AW1vFpet8TA/fGmVA5krThl8YcOVE/8ZIoEA1+U1vEn5ckxxhLirSdY837azmbaNHA==}
+
+  hyparquet-compressors@1.1.1:
+    resolution: {integrity: sha512-yx7aA3Rhj0YycbdV71+XznQSLAefa4cT0urpgNXy4aM6eSeCknaVDNne8y45Uz74Fb15yyXUzOStlceOJBan7A==}
+
+  hyparquet-writer@0.15.6:
+    resolution: {integrity: sha512-fRjEEePceAwowCTX8p/CTDdsAzLFbfDhCAoLK5s1H+V54RGcQMuscfH/MFMy7S3bXRdkGsbe3fqImG/mdlz9cg==}
+
+  hyparquet@1.26.0:
+    resolution: {integrity: sha512-yxUiViPZ+z5h+xdX4rA1G+k30jXoEsG9I2xEpjaM84imGznbKjZzxuZFsdzqg6C4LxNnnAlDFvzpk4uxQWTbTQ==}
+
+  hysnappy@1.0.0:
+    resolution: {integrity: sha512-MNrC4NfwDGPb889O6gIfEtbvEZCSWUsSEhsz4Oq2FRcpGtXHfeVz3KciSPp5Pnnz1NjFMgDQNfxdJozymJEDDA==}
+
+snapshots:
+
+  fzstd@0.1.1: {}
+
+  hyparquet-compressors@1.1.1:
+    dependencies:
+      fzstd: 0.1.1
+      hysnappy: 1.0.0
+
+  hyparquet-writer@0.15.6:
+    dependencies:
+      hyparquet: 1.26.0
+
+  hyparquet@1.26.0: {}
+
+  hysnappy@1.0.0: {}
