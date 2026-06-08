@@ -4,6 +4,6 @@
   "staticAssetsToCopy": {
     "fileExtensions": [".resx", ".jpg", ".png", ".woff", ".eot", ".ttf", ".svg", ".gif"],
 
-    "includeGlobs": ["webparts/*/loc/*.js", "webparts/*/app/*.js"]
+    "includeGlobs": ["webparts/*/loc/*.js"]
   }
 }
