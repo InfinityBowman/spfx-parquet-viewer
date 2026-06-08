@@ -44,17 +44,28 @@ function parseTarget(arg) {
 
 const ROWS = parseTarget(process.argv[2])
 
-// deterministic PRNG so regenerating gives the same data
+// deterministic PRNG so regenerating gives the same data. mulberry32, not a
+// plain LCG: an LCG's `seed * 1103515245` overflows 2^53 in JS floats and loses
+// precision, which collapses high-resolution draws (e.g. a 1M-space sku) to only
+// ~11k distinct values. mulberry32 uses Math.imul (true 32-bit multiply), so
+// draws stay uniform across the full 32-bit range.
 let seed = 42
 function rand() {
-  seed = (seed * 1103515245 + 12345) % 2 ** 31
-  return seed / 2 ** 31
+  seed = (seed + 0x6d2b79f5) | 0
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296
 }
 const pick = (arr) => arr[Math.floor(rand() * arr.length)]
 
 const REGIONS = ['North', 'South', 'East', 'West', 'Central']
-const PRODUCTS = ['Widget', 'Gadget', 'Doohickey', 'Gizmo', 'Thingamajig']
 const CHANNELS = ['Online', 'Retail', 'Partner']
+// High-cardinality column: SKUs drawn from a 1,000,000-value space. With 100k
+// rows per row group, nearly every value in a group is distinct — so the
+// per-group dictionary stops being small and exercises the wide-dictionary /
+// plain-encoding path, unlike the low-cardinality region/channel columns.
+const SKU_POOL = 1_000_000
+const sku = () => `SKU-${String(Math.floor(rand() * SKU_POOL)).padStart(6, '0')}`
 const start = Date.UTC(2025, 0, 1)
 
 /** Generate `count` rows starting at id `idStart`; returns parquet columns + CSV text. */
@@ -62,7 +73,7 @@ function buildBatch(count, idStart) {
   const ids = []
   const dates = []
   const regions = []
-  const products = []
+  const skus = []
   const channels = []
   const units = []
   const unitPrices = []
@@ -76,7 +87,7 @@ function buildBatch(count, idStart) {
     const u = 1 + Math.floor(rand() * 50)
     const price = Math.round((5 + rand() * 95) * 100) / 100
     const region = pick(REGIONS)
-    const product = pick(PRODUCTS)
+    const skuValue = sku()
     const channel = pick(CHANNELS)
     const total = Math.round(u * price * 100) / 100
     const isFulfilled = rand() > 0.1
@@ -84,14 +95,14 @@ function buildBatch(count, idStart) {
     ids.push(id)
     dates.push(date)
     regions.push(region)
-    products.push(product)
+    skus.push(skuValue)
     channels.push(channel)
     units.push(u)
     unitPrices.push(price)
     totals.push(total)
     fulfilled.push(isFulfilled)
     lines.push(
-      `${id},${date.toISOString().slice(0, 10)},${region},${product},${channel},${u},${price.toFixed(2)},${total.toFixed(2)},${isFulfilled}`,
+      `${id},${date.toISOString().slice(0, 10)},${region},${skuValue},${channel},${u},${price.toFixed(2)},${total.toFixed(2)},${isFulfilled}`,
     )
   }
 
@@ -99,7 +110,7 @@ function buildBatch(count, idStart) {
     { name: 'id', data: ids, type: 'INT32' },
     { name: 'date', data: dates, type: 'TIMESTAMP' },
     { name: 'region', data: regions, type: 'STRING' },
-    { name: 'product', data: products, type: 'STRING' },
+    { name: 'sku', data: skus, type: 'STRING' },
     { name: 'channel', data: channels, type: 'STRING' },
     { name: 'units', data: units, type: 'INT32' },
     { name: 'unit_price', data: unitPrices, type: 'DOUBLE' },
@@ -133,7 +144,7 @@ async function fileAsyncBuffer(path) {
 
 mkdirSync('out', { recursive: true })
 
-const header = 'id,date,region,product,channel,units,unit_price,total,fulfilled'
+const header = 'id,date,region,sku,channel,units,unit_price,total,fulfilled'
 const csv = createWriteStream('out/demo.csv')
 await writeChunk(csv, `${header}\n`)
 
@@ -161,7 +172,11 @@ await writer.finish()
 csv.end()
 await finished(csv)
 
-copyFileSync('out/demo.parquet', '../ui/public/sample.parquet')
+// Refresh the dev-harness sample only for modest outputs — never copy a huge
+// file into ui-app/public (it's served by `pnpm dev` and is gitignored).
+const DEV_SAMPLE_MAX = 100 * 1024 * 1024 // 100 MiB
+const copiedToDev = statSync('out/demo.parquet').size <= DEV_SAMPLE_MAX
+if (copiedToDev) copyFileSync('out/demo.parquet', '../ui-app/public/sample.parquet')
 
 // --- verify the parquet round-trips, via partial (ranged) reads only ---
 const ab = await fileAsyncBuffer('out/demo.parquet')
@@ -172,7 +187,10 @@ await ab.close()
 const csvBytes = statSync('out/demo.csv').size
 const parquetBytes = statSync('out/demo.parquet').size
 const mib = (n) => `${(n / 1024 / 1024).toFixed(1)} MiB`
-console.log(`wrote ${ROWS.toLocaleString()} rows → out/demo.csv, out/demo.parquet, ../ui/public/sample.parquet`)
+console.log(
+  `wrote ${ROWS.toLocaleString()} rows → out/demo.csv, out/demo.parquet` +
+    (copiedToDev ? ', ../ui-app/public/sample.parquet' : ' (dev sample skipped: output too large)'),
+)
 console.log(`row groups: ${Math.ceil(ROWS / ROW_GROUP_SIZE).toLocaleString()} (${ROW_GROUP_SIZE.toLocaleString()} rows each)`)
 console.log(
   `compression: csv ${mib(csvBytes)} → parquet ${mib(parquetBytes)} ` +
