@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'node:path';
 
 // Dev (`vite`) serves index.html as a standalone harness.
@@ -7,7 +8,7 @@ import { resolve } from 'node:path';
 // SPFx web part imports in phase 2. React is bundled in, not externalized,
 // so the SPFx side needs no React of its own.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   // Library mode does not substitute process.env.NODE_ENV the way an app build
   // does, so React's references would survive and throw "process is not defined"
   // in the browser (SPFx has no process global). Replace it with a literal.
