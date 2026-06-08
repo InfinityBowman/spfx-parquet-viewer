@@ -94,8 +94,8 @@ function renderCell(value: unknown, kind: ColKind): ReactNode {
     case 'boolean': {
       const on = value === true;
       return (
-        <span className="inline-flex items-center gap-1.5 text-[12px]">
-          <span className="inline-block h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: on ? '#16a34a' : '#c4c4cc' }} />
+        <span className="inline-flex items-center gap-1.5 text-xs">
+          <span className="inline-block size-1.75 shrink-0 rounded-full" style={{ background: on ? '#16a34a' : '#c4c4cc' }} />
           <span style={{ color: on ? '#15803d' : '#8a8a93' }}>{on ? 'Yes' : 'No'}</span>
         </span>
       );
@@ -136,7 +136,7 @@ const CARD =
 
 function Toolbar({ name, path, children }: { name: string; path?: string; children?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-neutral-200 px-[18px] py-3.5">
+    <div className="flex items-center justify-between gap-4 border-b border-neutral-200 px-4.5 py-3.5">
       <div className="flex min-w-0 flex-col">
         <span className="truncate text-[15px] font-semibold tracking-tight text-neutral-900">{name}</span>
         {path && <span className="mt-px truncate text-[11.5px] text-neutral-400">{path}</span>}
@@ -150,7 +150,7 @@ function Shell({ name, path, children }: { name?: string; path?: string; childre
   return (
     <div className={ROOT}>
       <div className={CARD}>
-        <div className="h-[3px] bg-gradient-to-r from-teal-700 to-teal-400" />
+        <div className="h-0.75 bg-linear-to-r from-teal-700 to-teal-400" />
         {name && <Toolbar name={name} path={path} />}
         {children}
       </div>
@@ -163,10 +163,10 @@ function LoadingState({ filePath }: { filePath: string }) {
     <Shell name={baseName(filePath)} path={filePath}>
       <div>
         {Array.from({ length: 8 }).map((_, i) => (
-          <div className="flex gap-4 border-b border-neutral-100 px-4 py-[9px]" key={i}>
+          <div className="flex gap-4 border-b border-neutral-100 px-4 py-2.25" key={i}>
             {Array.from({ length: 5 }).map((_, j) => (
               <div
-                className={`h-[11px] flex-1 animate-pulse rounded-md bg-neutral-200 ${j === 0 ? 'max-w-12' : ''}`}
+                className={`h-2.75 flex-1 animate-pulse rounded-md bg-neutral-200 ${j === 0 ? 'max-w-12' : ''}`}
                 key={j}
                 style={{ opacity: 1 - i * 0.09 }}
               />
@@ -219,8 +219,8 @@ export function App({ filePath, fetchFile }: ParquetViewerProps) {
   if (error) {
     return (
       <Shell name={filePath ? baseName(filePath) : 'Parquet viewer'} path={filePath || undefined}>
-        <div className="px-[18px] py-7">
-          <div className="whitespace-pre-wrap rounded-lg border-l-[3px] border-red-700 bg-red-50 px-[18px] py-3.5 text-[13px] text-red-800">
+        <div className="px-4.5 py-7">
+          <div className="whitespace-pre-wrap rounded-lg border-l-[3px] border-red-700 bg-red-50 px-4.5 py-3.5 text-[13px] text-red-800">
             <b className="mb-1 block font-semibold text-red-900">Couldn’t load this file</b>
             {error}
           </div>
@@ -234,7 +234,7 @@ export function App({ filePath, fetchFile }: ParquetViewerProps) {
   if (rows.length === 0) {
     return (
       <Shell name={baseName(filePath)} path={filePath}>
-        <div className="px-[18px] py-7 text-[13px] text-neutral-500">This file has no rows.</div>
+        <div className="px-4.5 py-7 text-[13px] text-neutral-500">This file has no rows.</div>
       </Shell>
     );
   }
@@ -244,7 +244,7 @@ export function App({ filePath, fetchFile }: ParquetViewerProps) {
   return (
     <div className={ROOT}>
       <div className={CARD}>
-        <div className="h-[3px] bg-gradient-to-r from-teal-700 to-teal-400" />
+        <div className="h-0.75 bg-linear-to-r from-teal-700 to-teal-400" />
         <Toolbar name={baseName(filePath)} path={filePath}>
           <span className="inline-flex items-baseline gap-1.5 rounded-full bg-neutral-100 px-2.5 py-1 text-[11.5px] whitespace-nowrap text-neutral-500">
             <b className="text-[13px] font-semibold tabular-nums text-neutral-900">{intFmt.format(columns.length)}</b> columns
@@ -261,7 +261,7 @@ export function App({ filePath, fetchFile }: ParquetViewerProps) {
                 {colMeta.map((c) => (
                   <th
                     key={c.key}
-                    className={`sticky top-0 z-10 select-none border-b border-neutral-300 bg-white px-4 py-[9px] text-[10.5px] font-semibold tracking-[0.06em] whitespace-nowrap text-neutral-500 uppercase ${
+                    className={`sticky top-0 z-10 select-none border-b border-neutral-300 bg-white px-4 py-2.25 text-[10.5px] font-semibold tracking-[0.06em] whitespace-nowrap text-neutral-500 uppercase ${
                       c.numeric ? 'text-right' : 'text-left'
                     }`}
                   >
@@ -276,7 +276,7 @@ export function App({ filePath, fetchFile }: ParquetViewerProps) {
                   {colMeta.map((c) => (
                     <td
                       key={c.key}
-                      className={`border-b border-neutral-100 px-4 py-[9px] whitespace-nowrap ${
+                      className={`border-b border-neutral-100 px-4 py-2.25 whitespace-nowrap ${
                         c.numeric ? 'text-right font-mono text-[12.5px] tabular-nums text-neutral-800' : 'text-left text-neutral-800'
                       }`}
                     >
