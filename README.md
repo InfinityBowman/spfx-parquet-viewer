@@ -77,6 +77,6 @@ Writes `data/out/demo.csv` + `data/out/demo.parquet` (snappy, via hyparquet-writ
 
 ## Notes
 
-- `ui-app/src/index.css` imports default Tailwind, **including Preflight**. The bundle injects the compiled CSS as a `<style>` tag at runtime (the Vite lib build's separate `explorer.css` is never loaded by SPFx). Preflight's bare-element resets apply to the whole host page — shipped as-is deliberately, to observe whether it disturbs the SharePoint chrome (see the note in `index.css`).
+- The UI's compiled Tailwind CSS is injected as a `<style>` tag at runtime (the Vite lib build's separate `explorer.css` is never loaded by SPFx) — see `ui-app/src/index.css`.
 - `hyparquet-compressors` covers all parquet codecs (snappy/gzip/zstd/...). If you standardize on one codec, import just that compressor to shrink the ~540KB UI bundle.
 - The viewer uses **ranged (partial) reads** and shows the first 200 rows. The UI contract is a fetch primitive (`fetchFile: typeof fetch`, see `ui-app/src/mount.tsx`): hyparquet issues a `HEAD` request for the file size (falling back to a 1-byte `Range` GET), then `Range` GETs for only the footer + needed column chunks instead of the whole file. The SPFx shell backs this with `SPHttpClient` against the **direct file URL** (not `_api/...$value` — see ADR-0001 D2); the Vite dev harness with `window.fetch` (Vite serves `206 Partial Content`, so a big `sample.parquet` exercises the path locally — watch the Network tab).

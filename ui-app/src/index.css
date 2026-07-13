@@ -1,7 +1,7 @@
-/* Default Tailwind v4 — includes Preflight (the global base reset). We inject the
+/* Default Tailwind v4 — includes Preflight (the base reset). We inject the
    compiled output as a string into a <style> tag (see App.tsx) because the Vite
    lib build emits a separate explorer.css the SPFx host never loads.
-   NOTE: Preflight uses bare element selectors (*, body, h1, button, img, …) so it
-   applies to the whole host page, not just our component. We're shipping it as-is
-   to observe whether it disrupts the surrounding SharePoint chrome. */
+   Preflight sits in @layer base, and layered rules lose to unlayered CSS —
+   SharePoint's styles are unlayered, so they always win and the reset doesn't
+   affect the host page. */
 @import "tailwindcss";

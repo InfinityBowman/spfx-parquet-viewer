@@ -15,8 +15,7 @@ const CATEGORY_MAX_LEN = 24;
 
 // Inject Tailwind's compiled CSS (string) into a <style> tag. The Vite lib build
 // emits a separate explorer.css the SPFx host never loads, so we inline it here to
-// keep the bundle self-contained. NOTE: this includes Tailwind Preflight, whose
-// bare-element selectors apply to the whole host page.
+// keep the bundle self-contained (see index.css).
 const STYLE_ID = 'pqv-tw';
 function useInjectedStyles(): void {
   useEffect(() => {
