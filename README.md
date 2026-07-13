@@ -2,7 +2,16 @@
 
 SPFx web part that reads parquet files from a SharePoint document library and renders them client-side with [hyparquet](https://github.com/hyparam/hyparquet).
 
-New to the codebase? Start with [docs/walkthrough.md](docs/walkthrough.md); design decisions live in [docs/adr/](docs/adr/).
+Start with [docs/walkthrough.md](docs/walkthrough.md).
+Design decisions live in [docs/adr/](docs/adr/).
+
+## SPFx background
+
+**What an SPFx web part is.** SPFx (SharePoint Framework) is Microsoft's model for extending SharePoint with client-side code. A web part is a widget that page authors drop onto a SharePoint page through the page editor — this one renders parquet files. Technically it's a class extending `BaseClientSideWebPart` plus a manifest JSON, webpack-bundled and running directly in the page (no iframe, no server component). Running in-page means it executes with the signed-in user's session, which is why the `SPHttpClient` file requests are authenticated for free.
+
+**How SPFx projects are scaffolded.** With Microsoft's Yeoman generator: `yo @microsoft/sharepoint`. The generator's answers are recorded in `.yo-rc.json` (this repo: a webpart named "ParquetViewer", SharePoint Online, npm, Heft build, generator v1.23) and are reused if you re-run the generator to add more components to the solution. Only the SPFx shell comes from the scaffold — `ui-app/` and `data/` are ordinary hand-added Vite/Node projects.
+
+**How deployment works.** `heft package-solution` zips the webpack bundle and feature XML into a `.sppkg`. `includeClientSideAssets: true` (`config/package-solution.json`) puts the JS inside the package, so SharePoint hosts the assets itself — no external CDN. An admin uploads the `.sppkg` to the tenant **App Catalog** and deploys it; `skipFeatureDeployment: true` makes it tenant-wide, so the web part shows up in every site's page-editor toolbox with no per-site install. During development none of this happens: `heft start` serves the bundle from `localhost:4321` and the hosted workbench loads it via a debug-manifest URL.
 
 ## Architecture
 
@@ -36,10 +45,12 @@ The SPFx toolchain (`heft`, `yo`, `@microsoft/generator-sharepoint`) is installe
 ## Setup
 
 ```sh
-nvm use && npm run bootstrap
+npm run bootstrap
 ```
 
-One command for a fresh clone: installs root, `ui-app/`, and `data/` dependencies, and generates `ui-app/public/sample.parquet` for the dev harness. Idempotent — safe to re-run. Requires Node 22 (`nvm use`); uses pnpm for `ui-app/`/`data/` when available and falls back to npm when it isn't (both lockfiles are committed), so pnpm is preferred but not required. Anywhere the docs say `pnpm <script>`, `npm run <script>` works too.
+One command for a fresh clone: installs root, `ui-app/`, and `data/` dependencies, and generates `ui-app/public/sample.parquet` for the dev harness. Idempotent — safe to re-run.
+
+Works from any Node version: if launched on the wrong one, the script fetches Node 22 through npm (`node@22` package, official binary, cached) and re-runs itself with it. No version manager or pre-installed Node 22 required; it only fails offline. Uses pnpm for `ui-app/`/`data/` when available and falls back to npm when it isn't (both lockfiles are committed), so pnpm is preferred but not required. Anywhere the docs say `pnpm <script>`, `npm run <script>` works too.
 
 ## Dev loops
 
@@ -64,7 +75,7 @@ cd ui-app && pnpm build  # if the UI changed since the last build
 nvm use && npm run build
 # → sharepoint/solution/spfx-parquet-viewer.sppkg
 ```
-Upload the `.sppkg` to your tenant App Catalog (create one under SharePoint admin center → More features → Apps), add the app to a site, then add the "ParquetViewer" web part to a page and set the parquet file path in its property pane.
+Upload the `.sppkg` to your tenant App Catalog (create one under SharePoint admin center → More features → Apps) and deploy. The solution is tenant-wide (`skipFeatureDeployment: true`), so no per-site install is needed — add the "ParquetViewer" web part to any page and set the parquet file path in its property pane.
 
 ## Demo data
 
