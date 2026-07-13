@@ -37,13 +37,15 @@ mount(el: HTMLElement, props: { filePath: string; fetchFile: typeof fetch }): vo
 unmount(el: HTMLElement): void
 ```
 
-The shell hands over a DOM element, a file path, and a fetch function; the UI does everything else. This means the UI can be developed standalone with `pnpm dev` against a local `sample.parquet` — no SharePoint needed for day-to-day iteration (`ui-app/src/dev.tsx` is the standalone harness, backing `fetchFile` with plain `window.fetch`).
+The shell hands over a DOM element, a file path, and a fetch function; the UI does everything else. On the SPFx side, the shell imports these from the vendored bundle (`src/webparts/parquetViewer/vendor/explorer/`), whose hand-maintained `explorer.d.ts` mirrors `mount.tsx`'s exports — change one, update the other.
+
+This split also means the UI can be developed standalone with `pnpm dev` against a local `sample.parquet` — no SharePoint needed for day-to-day iteration (`ui-app/src/dev.tsx` is the standalone harness, backing `fetchFile` with plain `window.fetch`).
 
 ## How it reads a huge file without downloading it
 
 This is the clever part, in `ui-app/src/App.tsx`. Parquet files have their index (the "footer") at the *end* of the file, and data is grouped into independent chunks ("row groups"). The [hyparquet](https://github.com/hyparam/hyparquet) library exploits this:
 
-1. A probe request learns the file's total size.
+1. A `HEAD` request learns the file's total size (with a 1-byte `Range` GET as fallback).
 2. An HTTP `Range` request grabs just the footer → now it knows where every row group lives.
 3. More `Range` requests fetch only the row groups needed for the first 200 rows.
 
@@ -67,9 +69,14 @@ Once the rows arrive, `App.tsx` does presentation-level type inference: numeric 
 ui-app (Vite build) ──► vendored bundle ──► SPFx/Heft build ──► webpack ──► .sppkg
 ```
 
-`nvm use && npm run build` at the root rebuilds the Vite bundle, copies it into the SPFx `lib/` output (via `staticAssetsToCopy` in `config/typescript.json`), and packages everything into `sharepoint/solution/spfx-parquet-viewer.sppkg`. That file gets uploaded to a tenant's **App Catalog**; the app is then added to a site, the web part added to a page, and the author sets the parquet file path in the property pane.
+Two steps, run separately:
 
-For local dev against the hosted workbench: `nvm use && npm start` runs the Vite watch build and `heft start` together.
+1. `cd ui-app && pnpm build` compiles the UI into `src/webparts/parquetViewer/vendor/explorer/explorer.js` (a committed, vendored file). This does **not** happen automatically — rerun it whenever the UI changes.
+2. `nvm use && npm run build` at the root runs the SPFx/Heft build: the rig's built-in `copy-javascript` task copies every `.js` under `src/` (including the vendored bundle) into `lib/`, webpack bundles it, and the result is packaged into `sharepoint/solution/spfx-parquet-viewer.sppkg`.
+
+That `.sppkg` gets uploaded to a tenant's **App Catalog**; the app is then added to a site, the web part added to a page, and the author sets the parquet file path in the property pane.
+
+For local dev against the hosted workbench: rebuild the UI bundle if it changed (`cd ui-app && pnpm build`), then `nvm use && npm start` runs `heft start` and opens the workbench.
 
 ## Toolchain gotcha
 

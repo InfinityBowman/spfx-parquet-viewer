@@ -11,8 +11,8 @@
  *
  * Outputs:
  *   out/demo.csv
- *   out/demo.parquet              (snappy, many row groups → good for ranged reads)
- *   ../ui/public/sample.parquet   (so `pnpm dev` in ui/ has data immediately)
+ *   out/demo.parquet                  (snappy, many row groups → good for ranged reads)
+ *   ../ui-app/public/sample.parquet   (dev-harness data; skipped when > 100 MiB)
  */
 import { mkdirSync, copyFileSync, statSync, createWriteStream } from 'node:fs'
 import { open, stat } from 'node:fs/promises'
