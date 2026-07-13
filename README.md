@@ -29,9 +29,17 @@ The shell is `--framework none`, so the UI is free of SPFx's React 17 pin — Re
 | Where | Node | Package manager | Why |
 |---|---|---|---|
 | root (SPFx) | **22 only** (`.nvmrc`) | npm | SPFx 1.23 hard-requires Node 22; Heft expects flat node_modules |
-| `ui-app/` | any modern | pnpm | normal Vite project rules |
+| `ui-app/`, `data/` | any modern | pnpm (npm works too) | normal Vite project rules |
 
 The SPFx toolchain (`heft`, `yo`, `@microsoft/generator-sharepoint`) is installed globally **under nvm's Node 22**, not Node 24. Run `nvm use` in the project root first.
+
+## Setup
+
+```sh
+nvm use && npm run bootstrap
+```
+
+One command for a fresh clone: installs root, `ui-app/`, and `data/` dependencies, and generates `ui-app/public/sample.parquet` for the dev harness. Idempotent — safe to re-run. Requires Node 22 (`nvm use`); uses pnpm for `ui-app/`/`data/` when available and falls back to npm when it isn't (both lockfiles are committed), so pnpm is preferred but not required. Anywhere the docs say `pnpm <script>`, `npm run <script>` works too.
 
 ## Dev loops
 
@@ -43,8 +51,8 @@ Generate a test file with `cd data && pnpm generate` (writes `ui-app/public/samp
 
 **Against the real SharePoint workbench:**
 ```sh
-# one-time: trust the dev cert
-heft trust-dev-cert
+# one-time: trust the dev cert (local heft from devDependencies)
+npx heft trust-dev-cert
 
 cd ui-app && pnpm build  # refresh the vendored UI bundle (no watch — rerun after UI changes)
 nvm use && npm start     # heft start; opens the hosted workbench — tenant pinned in config/serve.json

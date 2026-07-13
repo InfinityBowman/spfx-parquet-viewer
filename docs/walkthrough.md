@@ -80,4 +80,6 @@ For local dev against the hosted workbench: rebuild the UI bundle if it changed 
 
 ## Toolchain gotcha
 
-There are deliberately **two toolchains**: the repo root is npm on Node 22 (SPFx 1.23 hard-requires it — run `nvm use` first), while `ui-app/` is pnpm on any modern Node. Don't mix them.
+There are deliberately **two toolchains**: the repo root is npm on Node 22 (SPFx 1.23 hard-requires it — run `nvm use` first), while `ui-app/` and `data/` are pnpm on any modern Node. Don't mix them.
+
+For a fresh clone, `nvm use && npm run bootstrap` sets everything up in one shot — all three dependency trees plus the dev-harness sample data (see `scripts/bootstrap.mjs`).
